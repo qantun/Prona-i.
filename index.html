@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pronađi — Automatski nadzor nekretnina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+/* ─── CONFIG ─────────────────────────── */
+:root {
+  --bg:#F8F8F6; --white:#FFF; --dark:#18181A; --mid:#44444A;
+  --soft:#88888E; --border:#E4E4E0; --border-h:#C8C8C2;
+  --accent:#1D4ED8; --accent-l:#EEF3FF; --accent-h:#1741B8;
+  --green:#15803D; --green-bg:#F0FDF4; --green-b:#BBF7D0;
+  --orange:#C2410C; --orange-bg:#FFF7ED; --orange-b:#FED7AA;
+  --r:10px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
+  --sh-md:0 4px 12px rgba(0,0,0,.07),0 14px 36px rgba(0,0,0,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);-webkit-font-smoothing:antialiased}
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ─── TAGS ───────────────────────────── */
+.tag{display:inline-flex;align-items:center;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:4px;text-transform:uppercase;white-space:nowrap}
+.tag-p{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-b)}
+.tag-n{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b)}
+.tag-a{background:#F1F5F9;color:#64748B;border:1px solid #E2E8F0}
+.tag-drop{background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA}
+
+/* ─── BUTTONS ────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:'Nunito',sans-serif;font-weight:700;font-size:14px;padding:10px 20px;border-radius:var(--r);border:none;cursor:pointer;transition:all .17s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 16px rgba(29,78,216,.3)}
+.btn-primary:disabled{background:#94a3b8;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-outline{background:transparent;color:var(--dark);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--border-h);background:var(--white);box-shadow:var(--sh)}
+.btn-ghost{background:transparent;color:var(--mid);padding:10px 14px}
+.btn-ghost:hover{background:var(--border);color:var(--dark)}
+.btn-lg{font-size:15px;padding:13px 26px}
+.btn-sm{font-size:12px;padding:7px 14px}
+.btn-full{width:100%}
+.btn-danger{background:transparent;color:#dc2626;border:1.5px solid #fca5a5}
+.btn-danger:hover{background:#fee2e2;border-color:#dc2626}
+
+/* ─── TOAST ──────────────────────────── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-item{padding:12px 18px;border-radius:9px;font-size:13px;font-weight:700;color:#fff;box-shadow:var(--sh-md);animation:toastIn .25s ease;max-width:320px}
+.toast-success{background:#15803D}
+.toast-error{background:#dc2626}
+.toast-info{background:var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ─── LOADING ────────────────────────── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+.spinner-dark{border-color:rgba(29,78,216,.2);border-top-color:var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{padding:32px;text-align:center;color:var(--soft);font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px}
+
+/* ─── MODAL ──────────────────────────── */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:28px;width:100%;max-width:440px;box-shadow:var(--sh-md);position:relative}
+.modal-title{font-family:'Lora',serif;font-size:20px;font-weight:600;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--soft);margin-bottom:22px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--soft);line-height:1}
+.modal-close:hover{color:var(--dark)}
+.form-field{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:700;color:var(--mid);margin-bottom:5px;display:block;letter-spacing:.3px}
+.form-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;color:var(--dark);background:var(--white);outline:none;transition:border-color .14s}
+.form-input:focus{border-color:var(--accent)}
+.form-error{font-size:12px;color:#dc2626;margin-top:5px;display:none}
+.form-divider{text-align:center;font-size:13px;color:var(--soft);margin:14px 0;position:relative}
+.form-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+.form-divider span{background:var(--white);padding:0 12px;position:relative}
+
+/* ─── NAV ────────────────────────────── */
+#nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(248,248,246,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:62px;padding:0 28px;max-width:1120px;margin:0 auto}
+.logo{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--dark);text-decoration:none;letter-spacing:-.3px}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:2px;list-style:none}
+.nav-links a{font-size:14px;font-weight:600;color:var(--mid);text-decoration:none;padding:7px 12px;border-radius:8px;transition:all .14s}
+.nav-links a:hover{color:var(--dark);background:var(--border)}
+.nav-right{display:flex;gap:8px;align-items:center}
+.nav-burger{display:none;background:none;border:none;cursor:pointer;padding:8px;color:var(--dark)}
+.mob-menu{display:none;position:fixed;top:62px;left:0;right:0;z-index:198;background:var(--white);border-bottom:1px solid var(--border);padding:16px 24px 22px;box-shadow:var(--sh-md)}
+.mob-menu.open{display:block}
+.mob-menu a{display:block;padding:13px 0;font-size:15px;font-weight:700;color:var(--mid);text-decoration:none;border-bottom:1px solid var(--border)}
+.mob-menu-btns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+
+/* ─── HERO ───────────────────────────── */
+#hero{padding:108px 24px 64px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:var(--accent-l);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.4px;padding:5px 14px;border-radius:20px;margin-bottom:26px;text-transform:uppercase}
+.badge-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+h1{font-family:'Lora',serif;font-size:clamp(30px,5.5vw,56px);font-weight:600;line-height:1.13;letter-spacing:-.4px;margin-bottom:18px}
+h1 em{font-style:italic;color:var(--accent)}
+.hero-sub{font-size:clamp(15px,2vw,17px);color:var(--soft);line-height:1.7;max-width:520px;margin:0 auto 36px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-trust{margin-top:48px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap}
+.trust-i{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--soft)}
+.trust-i strong{color:var(--dark)}
+.trust-dot{width:4px;height:4px;border-radius:50%;background:var(--border-h)}
+
+/* ─── LIVE FEED ──────────────────────── */
+#feed-wrap{padding:0 24px 72px}
+.feed-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh-md);max-width:840px;margin:0 auto}
+.feed-hd{padding:13px 20px;background:var(--dark);display:flex;align-items:center;justify-content:space-between}
+.feed-hd-l{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:#fff}
+.live-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:blink 2s infinite}
+.src-chips{display:flex;gap:6px}
+.sc{font-size:10px;font-weight:800;letter-spacing:.3px;padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.sc-n{background:rgba(194,65,12,.2);color:#fb923c}
+.sc-i{background:rgba(29,78,216,.2);color:#93c5fd}
+.sc-p{background:rgba(21,128,61,.2);color:#86efac}
+.sc-c{background:rgba(124,58,237,.2);color:#c4b5fd}
+.feed-row{padding:13px 20px;display:grid;grid-template-columns:56px 1fr 120px 70px;gap:14px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.feed-row:last-child{border-bottom:none}
+.feed-row:hover{background:var(--bg)}
+.feed-row.f-new{border-left:3px solid #4ade80}
+.f-src{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.fc-n{color:var(--orange)}.fc-i{color:var(--accent)}.fc-p{color:var(--green)}.fc-c{color:#7c3aed}
+.f-title{font-size:13px;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.f-loc{font-size:11px;color:var(--soft)}
+.f-price{font-family:'Lora',serif;font-size:14px;font-weight:600;color:var(--dark);text-align:right}
+.f-time{font-size:11px;color:var(--soft);text-align:right}
+
+/* ─── SECTIONS ───────────────────────── */
+.sec{padding:80px 0}
+.sec-white{background:var(--white)}
+.sec-dark{background:var(--dark)}
+.sec-lbl{font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.sec-dark .sec-lbl{color:#93c5fd}
+h2{font-family:'Lora',serif;font-size:clamp(24px,3.5vw,38px);font-weight:600;line-height:1.2;letter-spacing:-.3px;margin-bottom:44px}
+.sec-dark h2{color:#fff}
+
+/* ─── FEATURES ───────────────────────── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feat{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:26px 22px;transition:box-shadow .2s,transform .2s}
+.feat:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.feat-ico{width:40px;height:40px;border-radius:9px;background:var(--accent-l);display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:14px}
+.feat-t{font-size:15px;font-weight:800;margin-bottom:7px}
+.feat-d{font-size:13px;color:var(--soft);line-height:1.65}
+
+/* ─── STEPS ──────────────────────────── */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
+.step-c{text-align:center}
+.step-n{width:52px;height:52px;border-radius:50%;border:2px solid rgba(147,197,253,.25);background:rgba(29,78,216,.08);display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:22px;font-weight:600;color:#93c5fd;margin:0 auto 18px}
+.step-t{font-size:16px;font-weight:800;color:#fff;margin-bottom:10px}
+.step-d{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7}
+
+/* ─── FILTERS SHOWCASE ───────────────── */
+.filters-grid{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center}
+.filter-box{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+.filter-box-hd{padding:13px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--dark)}
+.filter-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+.fg-lbl{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--soft);margin-bottom:7px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:600;color:var(--mid);cursor:pointer;transition:all .14s;background:var(--white)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.range-row{display:flex;align-items:center;gap:9px}
+.rinput{flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;color:var(--dark);background:var(--white);outline:none;transition:border-color .14s}
+.rinput:focus{border-color:var(--accent)}
+.rsep{font-size:13px;color:var(--soft);font-weight:600}
+.src-list{display:flex;flex-wrap:wrap;gap:7px}
+.srchip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);font-size:11px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;transition:all .14s;background:var(--white);color:var(--mid)}
+.srchip.on-n{border-color:var(--orange);background:var(--orange-bg);color:var(--orange)}
+.srchip.on-i{border-color:var(--accent);background:var(--accent-l);color:var(--accent)}
+.srchip.on-p{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.srchip.on-c{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.toggle-lbl{font-size:13px;font-weight:700;color:var(--dark)}
+.toggle-sub{font-size:11px;color:var(--soft);margin-top:2px}
+.toggle{position:relative;width:38px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:11px;cursor:pointer;transition:background .18s}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .18s;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+
+/* ─── PRICING ────────────────────────── */
+.pricing-layout{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.pricing-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:30px;box-shadow:var(--sh)}
+.pc-title{font-family:'Lora',serif;font-size:19px;font-weight:600;margin-bottom:5px}
+.pc-sub{font-size:13px;color:var(--soft);margin-bottom:24px}
+.slider-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.slider-lbl{font-size:13px;font-weight:700;color:var(--mid)}
+.slider-val{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--accent)}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--border);border-radius:4px;outline:none;margin-bottom:18px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(29,78,216,.35)}
+.disc-badge{display:none;align-items:center;gap:6px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:16px}
+.disc-badge.show{display:inline-flex}
+.price-breakdown{background:var(--bg);border-radius:9px;padding:18px;margin-bottom:20px}
+.prow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mid);padding:5px 0}
+.prow.ptotal{border-top:1px solid var(--border);margin-top:8px;padding-top:12px;font-size:15px;font-weight:800;color:var(--dark)}
+.feat-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:22px}
+.fl-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mid)}
+.fl-item::before{content:'✓';color:var(--green);font-weight:800;font-size:11px;flex-shrink:0}
+
+/* ─── FOOTER ─────────────────────────── */
+footer{padding:36px 24px;border-top:1px solid var(--border);background:var(--white)}
+.foot-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.foot-copy{font-size:13px;color:var(--soft)}
+
+/* ══════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════ */
+#dashboard{display:none;min-height:100vh;background:var(--bg)}
+
+.dsb{width:224px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;transition:transform .25s}
+.dsb-logo{padding:18px 20px 16px;font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--dark);border-bottom:1px solid var(--border);text-decoration:none;display:block}
+.dsb-logo span{color:var(--accent)}
+.dsb-nav{flex:1;padding:10px}
+.dsb-sec{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--soft);padding:12px 10px 5px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:var(--mid);transition:all .14s;margin-bottom:1px;text-decoration:none}
+.ni:hover{background:var(--bg);color:var(--dark)}
+.ni.on{background:var(--accent-l);color:var(--accent)}
+.ni-ico{font-size:15px;width:18px;text-align:center}
+.dsb-user{padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.u-ava{width:32px;height:32px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.u-name{font-size:13px;font-weight:700;color:var(--dark)}
+.u-plan{font-size:11px;color:var(--accent);font-weight:600}
+
+.dmain{margin-left:224px;flex:1;display:flex;flex-direction:column}
+.dtopbar{padding:14px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50}
+.dtitle{font-size:17px;font-weight:800;color:var(--dark)}
+.dsub{font-size:12px;color:var(--soft);margin-top:2px}
+.dtb-r{display:flex;gap:8px;align-items:center}
+.dsb-tog{display:none;background:none;border:1px solid var(--border);border-radius:7px;cursor:pointer;padding:7px 9px;color:var(--dark)}
+
+.dcontent{padding:22px 24px;flex:1}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;transition:box-shadow .18s}
+.sc-card:hover{box-shadow:var(--sh)}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sc-lbl{font-size:11px;font-weight:700;color:var(--soft);letter-spacing:.3px}
+.sc-ico{font-size:16px}
+.sc-num{font-family:'Lora',serif;font-size:26px;font-weight:600;color:var(--dark);line-height:1}
+.sc-ch{font-size:11px;font-weight:700;margin-top:5px}
+.ch-up{color:var(--green)}.ch-neu{color:var(--soft)}
+
+/* Two col */
+.d2col{display:grid;grid-template-columns:1fr 288px;gap:18px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.phd{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ptitle{font-size:13px;font-weight:800;color:var(--dark);display:flex;align-items:center;gap:8px}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.live-pill::before{content:'';width:5px;height:5px;background:var(--green);border-radius:50%;animation:blink 2s infinite}
+
+/* Dash filters */
+.dfilters{padding:11px 18px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.df{padding:5px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--mid);cursor:pointer;transition:all .14s}
+.df:hover,.df.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+.dfs{padding:5px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);font-family:'Nunito',sans-serif;font-size:12px;color:var(--mid);cursor:pointer;outline:none}
+.df-toggle-wrap{display:flex;align-items:center;gap:8px;margin-left:auto}
+.df-toggle-lbl{font-size:12px;font-weight:700;color:var(--mid)}
+.mini-toggle{position:relative;width:32px;height:18px;flex-shrink:0}
+.mini-toggle input{opacity:0;width:0;height:0;position:absolute}
+.mt-track{position:absolute;inset:0;background:var(--border);border-radius:9px;cursor:pointer;transition:background .18s}
+.mini-toggle input:checked+.mt-track{background:var(--accent)}
+.mt-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;border-radius:50%;transition:transform .18s;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.mini-toggle input:checked~.mt-thumb{transform:translateX(14px)}
+
+/* Listing rows */
+.lrow{padding:11px 18px;display:grid;grid-template-columns:1fr 80px 110px 68px;gap:12px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.lrow:last-child{border-bottom:none}
+.lrow:hover{background:var(--bg)}
+.lrow.lnew{border-left:3px solid #4ade80}
+.lt{font-size:13px;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.lm{font-size:11px;color:var(--soft)}
+.lsrc{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.lp{font-family:'Lora',serif;font-size:14px;font-weight:600;color:var(--dark);text-align:right}
+.ltime{font-size:11px;color:var(--soft);text-align:right}
+
+/* Pagination */
+.pagination{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--soft)}
+.page-btns{display:flex;gap:6px}
+.page-btn{padding:5px 11px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--mid);cursor:pointer;transition:all .14s}
+.page-btn:hover,.page-btn.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Notif */
+.notif{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;gap:9px;align-items:flex-start}
+.notif:last-child{border-bottom:none}
+.nd{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.nd-g{background:var(--green)}.nd-b{background:var(--accent)}.nd-o{background:var(--orange)}
+.nt{font-size:12px;color:var(--dark);line-height:1.5}
+.ntime{font-size:10px;color:var(--soft);margin-top:3px}
+
+/* Sidebar overlay */
+.sb-ov{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.38)}
+.sb-ov.open{display:block}
+
+/* ─── RESPONSIVE ─────────────────────── */
+@media(max-width:1024px){
+  .feat-grid{grid-template-columns:repeat(2,1fr)}
+  .d2col{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .pricing-layout{grid-template-columns:1fr}
+  .filters-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .nav-links,.nav-right .btn-outline{display:none}
+  .nav-burger{display:block}
+  h1{font-size:28px}
+  .hero-trust{gap:14px}
+  .trust-dot{display:none}
+  #feed-wrap{padding:0 16px 56px}
+  .feed-row{grid-template-columns:48px 1fr 100px}
+  .f-time{display:none}
+  .src-chips{display:none}
+  .sec{padding:52px 0}
+  h2{font-size:24px;margin-bottom:32px}
+  .feat-grid{grid-template-columns:1fr;gap:12px}
+  .steps-grid{grid-template-columns:1fr;gap:24px}
+  .pricing-card{padding:22px 18px}
+  .feat-list{grid-template-columns:1fr}
+  .dsb{transform:translateX(-100%)}
+  .dsb.open{transform:translateX(0)}
+  .dmain{margin-left:0}
+  .dsb-tog{display:flex}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .dcontent{padding:14px 16px}
+  .dtopbar{padding:12px 16px}
+  .lrow{grid-template-columns:1fr auto}
+  .lsrc,.ltime{display:none}
+}
+@media(max-width:480px){
+  #hero{padding:88px 16px 52px}
+  .hero-btns{flex-direction:column;align-items:center}
+  .hero-btns .btn{width:100%;max-width:300px}
+  .stats-row{grid-template-columns:1fr}
+}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.rv.vis{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LANDING ══════════ -->
+<div id="lp">
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">Pronađi<span>.</span></a>
+    <ul class="nav-links">
+      <li><a href="#kako-radi">Kako radi</a></li>
+      <li><a href="#filtri">Filtri</a></li>
+      <li><a href="#cijena">Cijena</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="#" class="btn btn-outline" onclick="openModal('login');return false">Prijava</a>
+      <a href="#" class="btn btn-primary" onclick="openModal('register');return false">Otvori račun</a>
+      <button class="nav-burger" onclick="toggleMob()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mob-menu" id="mobMenu">
+  <a href="#kako-radi" onclick="closeMob()">Kako radi</a>
+  <a href="#filtri" onclick="closeMob()">Filtri</a>
+  <a href="#cijena" onclick="closeMob()">Cijena</a>
+  <div class="mob-menu-btns">
+    <a href="#" class="btn btn-outline btn-full" onclick="openModal('login');closeMob();return false">Prijava</a>
+    <a href="#" class="btn btn-primary btn-full" onclick="openModal('register');closeMob();return false">Otvori račun</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-badge"><div class="badge-dot"></div>5+ oglasnika · Uživo</div>
+  <h1>Budi <em>prvi</em> koji upisuje<br>novu nekretninu.</h1>
+  <p class="hero-sub">Pronađi automatski prati sve veće oglasne platforme u Hrvatskoj i odmah te obavještava o novim privatnim oglasima — na jednom preglednom mjestu.</p>
+  <div class="hero-btns">
+    <a href="#" class="btn btn-primary btn-lg" onclick="openModal('register');return false">Otvori račun →</a>
+    <a href="#kako-radi" class="btn btn-outline btn-lg">Kako radi</a>
+  </div>
+  <div class="hero-trust">
+    <div class="trust-i"><strong>5+</strong> oglasnika</div>
+    <div class="trust-dot"></div>
+    <div class="trust-i"><strong>&lt;60 s</strong> do obavijesti</div>
+    <div class="trust-dot"></div>
+    <div class="trust-i"><strong>Bez</strong> ugovora</div>
+    <div class="trust-dot"></div>
+    <div class="trust-i"><strong>Otkaži</strong> kad god</div>
+  </div>
+</section>
+
+<!-- LIVE FEED -->
+<div id="feed-wrap">
+  <div class="container">
+    <div class="feed-card">
+      <div class="feed-hd">
+        <div class="feed-hd-l"><div class="live-dot"></div>Novi oglasi — uživo</div>
+        <div class="src-chips">
+          <span class="sc sc-n">Njuškalo</span><span class="sc sc-i">Index</span>
+          <span class="sc sc-p">Plavi</span><span class="sc sc-c">Čačkalo</span>
+        </div>
+      </div>
+      <div id="liveFeed">
+        <div class="feed-row f-new"><span class="f-src fc-n">Njuškalo</span><div><div class="f-title">Stan 2S+DB, Rijeka — Centar, 58m² <span class="tag tag-p">Privatni</span></div><div class="f-loc">📍 Primorsko-goranska, Rijeka</div></div><div class="f-price">185.000 €</div><div class="f-time">Upravo</div></div>
+        <div class="feed-row f-new"><span class="f-src fc-i">Index</span><div><div class="f-title">Kuća 160m², okućnica 800m², Split <span class="tag tag-n">Novo</span></div><div class="f-loc">📍 Splitsko-dalmatinska, Split</div></div><div class="f-price">420.000 €</div><div class="f-time">Prije 3 min</div></div>
+        <div class="feed-row"><span class="f-src fc-p">Plavi</span><div><div class="f-title">Apartman 1S+DB, Makarska rivijera</div><div class="f-loc">📍 Splitsko-dalmatinska, Brela</div></div><div class="f-price">230.000 €</div><div class="f-time">Prije 9 min</div></div>
+        <div class="feed-row"><span class="f-src fc-n">Njuškalo</span><div><div class="f-title">Garsonjera 28m², Zagreb — Trešnjevka <span class="tag tag-p">Privatni</span></div><div class="f-loc">📍 Grad Zagreb, Trešnjevka</div></div><div class="f-price">108.000 €</div><div class="f-time">Prije 14 min</div></div>
+        <div class="feed-row"><span class="f-src fc-c">Čačkalo</span><div><div class="f-title">Villa s bazenom, Dubrovnik okolica <span class="tag tag-n">Novo</span></div><div class="f-loc">📍 Dubrovačko-neretvanska</div></div><div class="f-price">1.200.000 €</div><div class="f-time">Prije 22 min</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="sec sec-white" id="mogucnosti">
+  <div class="container">
+    <div class="sec-lbl">Mogućnosti</div>
+    <h2>Sve što trebaš za brže upise.</h2>
+    <div class="feat-grid">
+      <div class="feat rv"><div class="feat-ico">⚡</div><div class="feat-t">Oglasi u sekundi</div><p class="feat-d">Čim se oglas pojavi na praćenim platformama, vidljiv je u Pronađi. Bez čekanja i bez ručnog refreshanja.</p></div>
+      <div class="feat rv"><div class="feat-ico">🎯</div><div class="feat-t">Privatni prodavatelji</div><p class="feat-d">Automatski prepoznajemo privatne oglase i jasno ih označavamo. Znaš točno kome se javljaš.</p></div>
+      <div class="feat rv"><div class="feat-ico">🔍</div><div class="feat-t">Napredni filtri</div><p class="feat-d">Filtriraj po lokaciji, tipu, kvadraturi, cijeni i izvoru. Agencijske oglase uključi samo kada ih sam izabereš.</p></div>
+      <div class="feat rv"><div class="feat-ico">📉</div><div class="feat-t">Praćenje sniženja cijene</div><p class="feat-d">Alert čim prodavatelj smanji cijenu — idealna polazna točka za pregovaranje prije nego drugi agenti uopće primijete.</p></div>
+      <div class="feat rv"><div class="feat-ico">💡</div><div class="feat-t">AI sažetak oglasa</div><p class="feat-d">Automatski sažetak ključnih detalja svakog oglasa u dvije rečenice. Odlučuješ u sekundi bez čitanja cijelog teksta.</p></div>
+      <div class="feat rv"><div class="feat-ico">📊</div><div class="feat-t">Cijena po m²</div><p class="feat-d">Svaki oglas automatski dobiva €/m² i usporedbu s prosjekom kvarta. Odmah vidiš je li nekretnina podcijenjena.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec sec-dark" id="kako-radi">
+  <div class="container">
+    <div class="sec-lbl">Kako radi</div>
+    <h2>Počni za manje od 3 minute.</h2>
+    <div class="steps-grid">
+      <div class="step-c rv"><div class="step-n">1</div><div class="step-t">Registracija i postavke</div><p class="step-d">Kreiraj račun i postavi filtere prema lokaciji, vrsti nekretnine i cjenovnom rasponu koji odgovaraju tvojim klijentima.</p></div>
+      <div class="step-c rv"><div class="step-n">2</div><div class="step-t">Pronađi prati oglase</div><p class="step-d">Platforma automatski skenira Njuškalo, Index, Plavi Oglasnik, Čačkalo i druge — bez ikakvog ručnog rada s tvoje strane.</p></div>
+      <div class="step-c rv"><div class="step-n">3</div><div class="step-t">Javi se prvi i upiši</div><p class="step-d">Čim se pojavi nova nekretnina, ti si prvi koji zna. Javi se prodavatelju, upiši nekretninu i zatvori prodaju.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FILTERS -->
+<section class="sec sec-white" id="filtri">
+  <div class="container">
+    <div class="filters-grid">
+      <div>
+        <div class="sec-lbl">Filtri</div>
+        <h2 style="margin-bottom:16px">Filtriraj točno ono što tražiš.</h2>
+        <p style="font-size:14px;color:var(--soft);line-height:1.7;margin-bottom:20px">Podrazumijevano vidiš samo privatne prodavatelje — agencijske oglase dodaješ jednim klikom kada ti trebaju.</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:10px">
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Vrsta nekretnine (stan, kuća, villa, poslovni, zemljište)</li>
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Lokacija po regiji, gradu ili kvartu</li>
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Raspon cijene i kvadrature</li>
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Agencijski oglasi — vidljivi samo ako ih sam uključiš</li>
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Odabir izvora (Njuškalo, Index, Plavi, Čačkalo…)</li>
+          <li style="font-size:13px;color:var(--mid);display:flex;gap:10px"><span style="color:var(--green);font-weight:800;flex-shrink:0">✓</span>Samo stvarno novi oglasi — obnovljeni su označeni posebno</li>
+        </ul>
+      </div>
+      <div class="filter-box rv">
+        <div class="filter-box-hd">🎯 Primjer filtera</div>
+        <div class="filter-body">
+          <div><div class="fg-lbl">Vrsta nekretnine</div><div class="chips"><div class="chip on" onclick="this.classList.toggle('on')">Stan</div><div class="chip" onclick="this.classList.toggle('on')">Kuća</div><div class="chip" onclick="this.classList.toggle('on')">Villa</div><div class="chip" onclick="this.classList.toggle('on')">Poslovni</div><div class="chip" onclick="this.classList.toggle('on')">Zemljište</div></div></div>
+          <div><div class="fg-lbl">Raspon cijene (€)</div><div class="range-row"><input type="number" class="rinput" value="80000"><span class="rsep">—</span><input type="number" class="rinput" value="400000"></div></div>
+          <div><div class="fg-lbl">Kvadratura (m²)</div><div class="range-row"><input type="number" class="rinput" value="30"><span class="rsep">—</span><input type="number" class="rinput" value="150"></div></div>
+          <div><div class="fg-lbl">Oglasnici</div><div class="src-list"><div class="srchip on-n" onclick="this.classList.toggle('on-n')">Njuškalo</div><div class="srchip on-i" onclick="this.classList.toggle('on-i')">Index</div><div class="srchip on-p" onclick="this.classList.toggle('on-p')">Plavi</div><div class="srchip on-c" onclick="this.classList.toggle('on-c')">Čačkalo</div></div></div>
+          <div><div class="toggle-row"><div><div class="toggle-lbl">Prikaži agencijske oglase</div><div class="toggle-sub" id="demoToggleSub">Isključeno — vidiš samo privatne</div></div><label class="toggle"><input type="checkbox" onchange="document.getElementById('demoToggleSub').textContent=this.checked?'Uključeno — vidiš sve oglase':'Isključeno — vidiš samo privatne'"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" id="cijena">
+  <div class="container">
+    <div class="pricing-layout">
+      <div>
+        <div class="sec-lbl">Cijena</div>
+        <h3 style="font-family:'Lora',serif;font-size:28px;font-weight:600;line-height:1.25;margin-bottom:14px">Plati samo za agente koji koriste platformu.</h3>
+        <p style="font-size:14px;color:var(--soft);line-height:1.7;margin-bottom:14px">Bez skrivenih naknada, bez ugovora. Od 4 agenta nadalje svi automatski dobivaju grupni popust od 17%.</p>
+        <p style="font-size:14px;color:var(--soft);line-height:1.7;margin-bottom:20px">Svaki plan uključuje pristup svim mogućnostima platforme.</p>
+        <a href="#" class="btn btn-primary" onclick="openModal('register');return false">Otvori račun →</a>
+        <p style="font-size:12px;color:var(--soft);margin-top:10px">Bez kreditne kartice · Otkaži kad god</p>
+      </div>
+      <div class="pricing-card rv">
+        <div class="pc-title">Kalkulator cijene</div>
+        <p class="pc-sub">Povuci crtu i vidi koliko košta Pronađi za tvoju agenciju.</p>
+        <div class="slider-hd"><span class="slider-lbl">Broj agenata</span><span class="slider-val" id="agentCount">1</span></div>
+        <input type="range" min="1" max="20" value="1" oninput="calcPrice(this.value)">
+        <div class="disc-badge" id="discBadge">🎉 17% grupni popust aktivan!</div>
+        <div class="price-breakdown">
+          <div class="prow"><span>Osnovna cijena (1 agent)</span><span>50 €</span></div>
+          <div class="prow" id="discRow" style="display:none"><span>Grupni popust (17%)</span><span id="discVal" style="color:var(--green);font-weight:700">–0 €</span></div>
+          <div class="prow ptotal"><span>Ukupno / mjesečno</span><span id="totalPrice">50 €</span></div>
+        </div>
+        <div class="feat-list">
+          <div class="fl-item">Pristup svim oglasnicima</div><div class="fl-item">Prepoznavanje privatnih</div>
+          <div class="fl-item">Automatsko praćenje</div><div class="fl-item">Prilagodljivi filtri</div>
+          <div class="fl-item">Email i push obavijesti</div><div class="fl-item">Podrška chat / email</div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="openModal('register')">Otvori račun →</button>
+        <p style="font-size:11px;color:var(--soft);text-align:center;margin-top:10px">Bez kreditne kartice · Otkaži kad god</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec sec-white">
+  <div class="container" style="text-align:center;max-width:640px">
+    <div class="sec-lbl" style="text-align:center">Počni danas</div>
+    <h2 style="text-align:center;margin-bottom:16px">Upiši prvu nekretninu<br>već danas.</h2>
+    <p style="font-size:15px;color:var(--soft);line-height:1.7;margin-bottom:32px">Registracija traje manje od 3 minute. Bez kreditne kartice, bez ugovora.</p>
+    <a href="#" class="btn btn-primary btn-lg" onclick="openModal('register');return false">Otvori račun →</a>
+    <p style="font-size:12px;color:var(--soft);margin-top:14px">Otkaži kad god · Bez skrivenih naknada</p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-inner">
+    <a href="#" class="logo" style="font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--dark);text-decoration:none">Pronađi<span style="color:var(--accent)">.</span></a>
+    <p class="foot-copy">© Qantun d.o.o. 2026. Sva prava pridržana.</p>
+  </div>
+</footer>
+</div><!-- /lp -->
+
+<!-- ══════════ MODALI ══════════ -->
+<!-- LOGIN -->
+<div class="modal-backdrop" id="modal-login">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('login')">×</button>
+    <div class="modal-title">Dobro došao natrag</div>
+    <p class="modal-sub">Prijavi se u svoj Pronađi račun.</p>
+    <div class="form-field">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="login-email" placeholder="tvoj@email.com" autocomplete="email">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Lozinka</label>
+      <input type="password" class="form-input" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="form-error" id="login-error"></div>
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()" style="margin-top:6px">Prijavi se</button>
+    <div class="form-divider"><span>ili</span></div>
+    <p style="text-align:center;font-size:13px;color:var(--soft)">Nemaš račun? <a href="#" onclick="closeModal('login');openModal('register');return false" style="color:var(--accent);font-weight:700">Registriraj se</a></p>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="modal-backdrop" id="modal-register">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('register')">×</button>
+    <div class="modal-title">Otvori račun</div>
+    <p class="modal-sub">Počni pratiti nekretnine već danas.</p>
+    <div class="form-field">
+      <label class="form-label">Ime i prezime</label>
+      <input type="text" class="form-input" id="reg-name" placeholder="Marko Kovačević" autocomplete="name">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Agencija (opcionalno)</label>
+      <input type="text" class="form-input" id="reg-agency" placeholder="Naziv agencije">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="reg-email" placeholder="tvoj@email.com" autocomplete="email">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Lozinka</label>
+      <input type="password" class="form-input" id="reg-password" placeholder="Min. 8 znakova" autocomplete="new-password">
+    </div>
+    <div class="form-error" id="reg-error"></div>
+    <button class="btn btn-primary btn-full" id="reg-btn" onclick="doRegister()" style="margin-top:6px">Otvori račun</button>
+    <div class="form-divider"><span>ili</span></div>
+    <p style="text-align:center;font-size:13px;color:var(--soft)">Već imaš račun? <a href="#" onclick="closeModal('register');openModal('login');return false" style="color:var(--accent);font-weight:700">Prijavi se</a></p>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="dashboard">
+  <div class="sb-ov" id="sbOv" onclick="closeSb()"></div>
+
+  <aside class="dsb" id="dsb">
+    <a href="#" class="dsb-logo" onclick="showLanding();return false">Pronađi<span>.</span></a>
+    <nav class="dsb-nav">
+      <div class="dsb-sec">Glavni</div>
+      <a class="ni on" onclick="setNi(this)"><span class="ni-ico">🏠</span>Oglasi</a>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">🔔</span>Obavijesti</a>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">🎯</span>Moji filtri</a>
+      <div class="dsb-sec">Analitika</div>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">📉</span>Sniženja cijena</a>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">📊</span>Statistike</a>
+      <div class="dsb-sec">Račun</div>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">💳</span>Pretplata</a>
+      <a class="ni" onclick="setNi(this)"><span class="ni-ico">⚙️</span>Postavke</a>
+      <a class="ni" onclick="doLogout()"><span class="ni-ico">🚪</span>Odjava</a>
+    </nav>
+    <div class="dsb-user">
+      <div class="u-ava" id="userAva">?</div>
+      <div><div class="u-name" id="userName">—</div><div class="u-plan" id="userPlan">—</div></div>
+    </div>
+  </aside>
+
+  <main style="margin-left:224px;flex:1;display:flex;flex-direction:column">
+    <div class="dtopbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="dsb-tog" id="sbTog" onclick="toggleSb()">☰</button>
+        <div>
+          <div class="dtitle" id="dashGreeting">Dobro jutro 👋</div>
+          <div class="dsub">Danas je objavljeno <strong id="todayCount">—</strong> novih oglasa prema tvojim filtrima.</div>
+        </div>
+      </div>
+      <div class="dtb-r">
+        <button class="btn btn-outline btn-sm" onclick="openModal('newFilter')">+ Novi filter</button>
+        <button class="btn btn-primary btn-sm" onclick="loadListings()">Osvježi</button>
+      </div>
+    </div>
+
+    <div class="dcontent">
+      <div class="stats-row">
+        <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Novi danas</span><span class="sc-ico">🏠</span></div><div class="sc-num" id="stat-today">—</div><div class="sc-ch ch-up" id="stat-today-sub"> </div></div>
+        <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Privatni</span><span class="sc-ico">🎯</span></div><div class="sc-num" id="stat-private">—</div><div class="sc-ch ch-up">danas</div></div>
+        <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Sniženja cijene</span><span class="sc-ico">📉</span></div><div class="sc-num" id="stat-dropped">—</div><div class="sc-ch ch-neu">danas</div></div>
+        <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Pretplata</span><span class="sc-ico">💳</span></div><div class="sc-num" id="stat-plan">—</div><div class="sc-ch ch-neu" id="stat-plan-sub"> </div></div>
+      </div>
+
+      <div class="d2col">
+        <div class="panel">
+          <div class="phd">
+            <div class="ptitle">Oglasi <div class="live-pill">UŽIVO</div></div>
+            <span style="font-size:11px;color:var(--soft)" id="lastRefresh">—</span>
+          </div>
+          <div class="dfilters">
+            <button class="df on" onclick="dfOn(this,'')">Svi</button>
+            <button class="df" onclick="dfOn(this,'new')">Novi</button>
+            <button class="df" onclick="dfOn(this,'dropped')">Sniženi</button>
+            <select class="dfs" id="cityFilter" onchange="loadListings()">
+              <option value="">Sve lokacije</option>
+              <option>Zagreb</option><option>Rijeka</option><option>Split</option>
+              <option>Zadar</option><option>Dubrovnik</option><option>Pula</option>
+            </select>
+            <select class="dfs" id="typeFilter" onchange="loadListings()">
+              <option value="">Svi tipovi</option>
+              <option value="stan">Stan</option><option value="kuca">Kuća</option>
+              <option value="villa">Villa</option><option value="poslovni">Poslovni</option>
+            </select>
+            <select class="dfs" id="sourceFilter" onchange="loadListings()">
+              <option value="">Svi oglasnici</option>
+              <option value="njuskalo">Njuškalo</option><option value="index">Index</option>
+              <option value="plavi">Plavi</option><option value="cackaloo">Čačkalo</option>
+            </select>
+            <div class="df-toggle-wrap">
+              <span class="df-toggle-lbl">Agencije</span>
+              <label class="mini-toggle">
+                <input type="checkbox" id="agencyToggle" onchange="loadListings()">
+                <div class="mt-track"></div><div class="mt-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div id="dashListings"><div class="loading-row"><div class="spinner spinner-dark"></div>Učitavam oglase...</div></div>
+          <div class="pagination" id="pagination" style="display:none">
+            <span id="paginationInfo"></span>
+            <div class="page-btns" id="pageButtons"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="phd"><div class="ptitle">🔔 Obavijesti</div></div>
+          <div id="notifList">
+            <div class="notif"><div class="nd nd-g"></div><div><div class="nt">Učitavam obavijesti...</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG — postavi svoju API adresu ovdje
+// ══════════════════════════════════════════
+const API = 'https://api.pronadji.hr'; // ← PROMIJENI u svoju domenu
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let token     = localStorage.getItem('pn_token') || null;
+let user      = JSON.parse(localStorage.getItem('pn_user') || 'null');
+let currentPage = 1;
+let activeFilter = '';
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  if (token && user) {
+    showDashboard();
+  }
+  initScrollReveal();
+  startLiveFeed();
+  calcPrice(1);
+
+  // Enter key na formama
+  ['login-password','reg-password'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') id.startsWith('login') ? doLogin() : doRegister();
+    });
+  });
+});
+
+// ══════════════════════════════════════════
+// API HELPER
+// ══════════════════════════════════════════
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  try {
+    const res = await fetch(API + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Greška na serveru');
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+
+  if (!email || !password) { showFormError(errEl, 'Upiši email i lozinku.'); return; }
+
+  setLoading(btn, true);
+  errEl.style.display = 'none';
+  try {
+    const data = await api('POST', '/api/auth/login', { email, password });
+    token = data.token;
+    user  = data.user;
+    localStorage.setItem('pn_token', token);
+    localStorage.setItem('pn_user', JSON.stringify(user));
+    closeModal('login');
+    showToast('Dobrodošao! 👋', 'success');
+    showDashboard();
+  } catch (err) {
+    showFormError(errEl, err.message);
+  } finally {
+    setLoading(btn, false, 'Prijavi se');
+  }
+}
+
+async function doRegister() {
+  const full_name   = document.getElementById('reg-name').value.trim();
+  const agency_name = document.getElementById('reg-agency').value.trim();
+  const email       = document.getElementById('reg-email').value.trim();
+  const password    = document.getElementById('reg-password').value;
+  const errEl       = document.getElementById('reg-error');
+  const btn         = document.getElementById('reg-btn');
+
+  if (!email || !password || password.length < 8) {
+    showFormError(errEl, 'Email i lozinka (min. 8 znakova) su obavezni.');
+    return;
+  }
+
+  setLoading(btn, true);
+  errEl.style.display = 'none';
+  try {
+    const data = await api('POST', '/api/auth/register', { email, password, full_name, agency_name });
+    token = data.token;
+    user  = data.user;
+    localStorage.setItem('pn_token', token);
+    localStorage.setItem('pn_user', JSON.stringify(user));
+    closeModal('register');
+    showToast('Račun kreiran! Dobrodošao 🎉', 'success');
+    showDashboard();
+  } catch (err) {
+    showFormError(errEl, err.message);
+  } finally {
+    setLoading(btn, false, 'Otvori račun');
+  }
+}
+
+function doLogout() {
+  token = null; user = null;
+  localStorage.removeItem('pn_token');
+  localStorage.removeItem('pn_user');
+  showLanding();
+  showToast('Odjavljen si.', 'info');
+}
+
+// ══════════════════════════════════════════
+// PAGE SWITCH
+// ══════════════════════════════════════════
+function showDashboard() {
+  document.getElementById('lp').style.display        = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  closeMob();
+  checkMobile();
+  updateUserUI();
+  loadStats();
+  loadListings();
+  loadNotifications();
+}
+
+function showLanding() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('lp').style.display        = 'block';
+  window.scrollTo(0, 0);
+}
+
+function updateUserUI() {
+  if (!user) return;
+  const initials = (user.full_name || user.email).split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('userAva').textContent  = initials;
+  document.getElementById('userName').textContent = user.full_name || user.email;
+  document.getElementById('userPlan').textContent = user.plan === 'active' ? 'Pro plan' : 'Neaktivno';
+
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Dobro jutro' : h < 18 ? 'Dobar dan' : 'Dobra večer';
+  document.getElementById('dashGreeting').textContent = `${g}, ${(user.full_name || '').split(' ')[0] || ''} 👋`;
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD DATA
+// ══════════════════════════════════════════
+async function loadStats() {
+  try {
+    const data = await api('GET', '/api/listings/stats/summary');
+    document.getElementById('stat-today').textContent   = data.today;
+    document.getElementById('stat-private').textContent = data.private;
+    document.getElementById('stat-dropped').textContent = data.dropped;
+    document.getElementById('todayCount').textContent   = data.today;
+    document.getElementById('stat-plan').textContent    = user?.plan === 'active' ? 'Aktivan' : 'Neaktivan';
+    document.getElementById('stat-plan-sub').textContent = user?.plan === 'active' ? 'Pretplata aktivna' : 'Aktiviraj pretplatu';
+  } catch {
+    // Ako backend nije dostupan, prikaži demo podatke
+    document.getElementById('stat-today').textContent   = '47';
+    document.getElementById('stat-private').textContent = '38';
+    document.getElementById('stat-dropped').textContent = '4';
+    document.getElementById('todayCount').textContent   = '47';
+    document.getElementById('stat-plan').textContent    = '—';
+    document.getElementById('stat-plan-sub').textContent = '';
+  }
+}
+
+async function loadListings() {
+  const listingsEl = document.getElementById('dashListings');
+  listingsEl.innerHTML = '<div class="loading-row"><div class="spinner spinner-dark"></div>Učitavam oglase...</div>';
+
+  const params = new URLSearchParams({
+    page:         currentPage,
+    limit:        15,
+    show_agency:  document.getElementById('agencyToggle')?.checked ? 'true' : 'false',
+  });
+
+  if (activeFilter === 'new')     params.set('is_new', 'true');
+  if (activeFilter === 'dropped') params.set('price_dropped', 'true');
+
+  const city   = document.getElementById('cityFilter')?.value;
+  const type   = document.getElementById('typeFilter')?.value;
+  const source = document.getElementById('sourceFilter')?.value;
+  if (city)   params.set('city', city);
+  if (type)   params.set('property_type', type);
+  if (source) params.set('source', source);
+
+  try {
+    const data = await api('GET', `/api/listings?${params}`);
+    renderListings(data.listings);
+    renderPagination(data.page, data.total_pages, data.total);
+    document.getElementById('lastRefresh').textContent = 'Ažurirano: ' + new Date().toLocaleTimeString('hr');
+  } catch {
+    // Demo mode — backend nije spojen
+    renderDemoListings();
+  }
+}
+
+function renderListings(listings) {
+  const c = document.getElementById('dashListings');
+  if (!listings || listings.length === 0) {
+    c.innerHTML = '<div class="loading-row">Nema oglasa koji odgovaraju filterima.</div>';
+    return;
+  }
+  c.innerHTML = '';
+  listings.forEach(l => {
+    const row = document.createElement('div');
+    row.className = 'lrow' + (l.is_new ? ' lnew' : '');
+    const srcMap = { njuskalo: 'fc-n', index: 'fc-i', plavi: 'fc-p', cackaloo: 'fc-c' };
+    const srcCls = srcMap[l.source] || 'fc-n';
+    const timeAgo = formatTimeAgo(l.scraped_at);
+    const ppm2 = l.price_per_sqm ? `<span style="font-size:10px;color:var(--soft);display:block">${Math.round(l.price_per_sqm).toLocaleString('hr')} €/m²</span>` : '';
+    row.innerHTML = `
+      <div>
+        <div class="lt">
+          ${l.title}
+          ${l.is_private ? '<span class="tag tag-p">Privatni</span>' : ''}
+          ${!l.is_private ? '<span class="tag tag-a">Agencija</span>' : ''}
+          ${l.is_new ? '<span class="tag tag-n">Novo</span>' : ''}
+          ${l.price_dropped ? '<span class="tag tag-drop">📉 Sniženo</span>' : ''}
+        </div>
+        <div class="lm">${l.city || ''}${l.size_sqm ? ' · ' + l.size_sqm + ' m²' : ''}</div>
+      </div>
+      <div class="lsrc ${srcCls}">${l.source}</div>
+      <div class="lp">${l.price ? l.price.toLocaleString('hr') + ' €' : '—'}${ppm2}</div>
+      <div class="ltime">${timeAgo}</div>
+    `;
+    row.onclick = () => window.open(l.url, '_blank');
+    c.appendChild(row);
+  });
+}
+
+function renderDemoListings() {
+  const demo = [
+    { title:'Stan 2S+DB, Rijeka — Centar, 58m²', is_new:true, is_private:true, price_dropped:false, source:'njuskalo', city:'Rijeka', size_sqm:58, price:185000, price_per_sqm:3189, scraped_at:new Date(), url:'#' },
+    { title:'Kuća 160m², okućnica 800m², Split', is_new:true, is_private:true, price_dropped:false, source:'index', city:'Split', size_sqm:160, price:420000, price_per_sqm:2625, scraped_at:new Date(Date.now()-120000), url:'#' },
+    { title:'Garsonjera 28m², Zagreb — Trešnjevka', is_new:false, is_private:true, price_dropped:true, source:'njuskalo', city:'Zagreb', size_sqm:28, price:98000, price_per_sqm:3500, scraped_at:new Date(Date.now()-720000), url:'#' },
+    { title:'Apartman 1S+DB, Makarska rivijera', is_new:true, is_private:true, price_dropped:false, source:'plavi', city:'Brela', size_sqm:42, price:230000, price_per_sqm:5476, scraped_at:new Date(Date.now()-420000), url:'#' },
+    { title:'Stan 3S, Volovčica — novogradnja', is_new:false, is_private:true, price_dropped:false, source:'njuskalo', city:'Zagreb', size_sqm:82, price:315000, price_per_sqm:3841, scraped_at:new Date(Date.now()-2040000), url:'#' },
+    { title:'Villa s bazenom, Dubrovnik okolica', is_new:true, is_private:false, price_dropped:false, source:'cackaloo', city:'Dubrovnik', size_sqm:280, price:1200000, price_per_sqm:4285, scraped_at:new Date(Date.now()-1080000), url:'#' },
+  ];
+  renderListings(demo);
+  document.getElementById('lastRefresh').textContent = 'Demo prikaz (backend nije spojen)';
+}
+
+function renderPagination(page, totalPages, total) {
+  const pag = document.getElementById('pagination');
+  const info = document.getElementById('paginationInfo');
+  const btns = document.getElementById('pageButtons');
+  if (totalPages <= 1) { pag.style.display = 'none'; return; }
+  pag.style.display = 'flex';
+  info.textContent = `${total} oglasa · Stranica ${page} od ${totalPages}`;
+  btns.innerHTML = '';
+  const prev = document.createElement('button');
+  prev.className = 'page-btn'; prev.textContent = '←'; prev.disabled = page <= 1;
+  prev.onclick = () => { currentPage--; loadListings(); };
+  btns.appendChild(prev);
+  for (let i = Math.max(1, page-1); i <= Math.min(totalPages, page+1); i++) {
+    const b = document.createElement('button');
+    b.className = 'page-btn' + (i === page ? ' on' : '');
+    b.textContent = i;
+    b.onclick = () => { currentPage = i; loadListings(); };
+    btns.appendChild(b);
+  }
+  const next = document.createElement('button');
+  next.className = 'page-btn'; next.textContent = '→'; next.disabled = page >= totalPages;
+  next.onclick = () => { currentPage++; loadListings(); };
+  btns.appendChild(next);
+}
+
+function loadNotifications() {
+  // Statičke demo notif — u produkciji ovo dohvaća iz backenda
+  const notifs = [
+    { color:'nd-g', text:'Novi privatni oglas u Rijeci — Stan 58m², 185.000 €', time:'Upravo' },
+    { color:'nd-b', text:'Cijena snižena — Kuća Trnje s 380.000 € na 355.000 €', time:'Prije 14 min' },
+    { color:'nd-g', text:'5 novih oglasa — filter "Split stanovi do 250k"', time:'Prije 31 min' },
+    { color:'nd-o', text:'Oglas maknut — Garsonjera Maksimir (prodano?)', time:'Prije 1 sat' },
+    { color:'nd-b', text:'Novi oglas odgovara filteru "Dubrovnik vile"', time:'Prije 2 sata' },
+    { color:'nd-g', text:'Cijena snižena — Stan Trešnjevka 98m² za 12.000 €', time:'Prije 3 sata' },
+  ];
+  document.getElementById('notifList').innerHTML = notifs.map(n => `
+    <div class="notif"><div class="nd ${n.color}"></div><div><div class="nt">${n.text}</div><div class="ntime">${n.time}</div></div></div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const sec = Math.floor((Date.now() - d) / 1000);
+  if (sec < 60) return 'Upravo';
+  if (sec < 3600) return `Prije ${Math.floor(sec/60)} min`;
+  if (sec < 86400) return `Prije ${Math.floor(sec/3600)} h`;
+  return `Prije ${Math.floor(sec/86400)} dana`;
+}
+
+function showFormError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+function setLoading(btn, loading, label) {
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+  } else {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = msg;
+  t.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = 'all .3s'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// ══════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════
+function openModal(id) {
+  document.getElementById('modal-' + id)?.classList.add('open');
+  document.getElementById(id === 'login' ? 'login-email' : 'reg-email')?.focus();
+}
+function closeModal(id) { document.getElementById('modal-' + id)?.classList.remove('open'); }
+
+// Close modal on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
+});
+
+function toggleMob() { document.getElementById('mobMenu').classList.toggle('open'); }
+function closeMob()  { document.getElementById('mobMenu').classList.remove('open'); }
+
+function checkMobile() { document.getElementById('sbTog').style.display = window.innerWidth < 768 ? 'flex' : 'none'; }
+function toggleSb() { document.getElementById('dsb').classList.toggle('open'); document.getElementById('sbOv').classList.toggle('open'); }
+function closeSb()  { document.getElementById('dsb').classList.remove('open'); document.getElementById('sbOv').classList.remove('open'); }
+window.addEventListener('resize', checkMobile);
+
+function setNi(el) {
+  document.querySelectorAll('.ni').forEach(i => i.classList.remove('on'));
+  el.classList.add('on');
+  closeSb();
+}
+
+function dfOn(el, filter) {
+  document.querySelectorAll('.df').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  activeFilter = filter;
+  currentPage = 1;
+  loadListings();
+}
+
+function calcPrice(v) {
+  v = parseInt(v);
+  document.getElementById('agentCount').textContent = v;
+  const disc = v >= 4 ? 0.17 : 0;
+  const pp = Math.round(50 * (1 - disc));
+  const total = v * pp;
+  document.getElementById('totalPrice').textContent = total.toLocaleString('hr') + ' €';
+  const db = document.getElementById('discBadge');
+  const dr = document.getElementById('discRow');
+  if (disc > 0) {
+    db.classList.add('show'); dr.style.display = 'flex';
+    document.getElementById('discVal').textContent = '–' + Math.round(50 * 0.17 * v) + ' €';
+  } else {
+    db.classList.remove('show'); dr.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════
+// LIVE FEED ANIMATION (landing page)
+// ══════════════════════════════════════════
+const feedData = [
+  { src:'Njuškalo', sc:'fc-n', title:'Stan 3S, Novi Zagreb — Sopnica', pvt:true, price:'275.000 €', loc:'Zagreb' },
+  { src:'Index',    sc:'fc-i', title:'Dvosoban stan, Pula centar',      pvt:true, price:'195.000 €', loc:'Pula' },
+  { src:'Plavi',    sc:'fc-p', title:'Kuća 140m², vrt, Varaždin',       pvt:true, price:'210.000 €', loc:'Varaždin' },
+  { src:'Čačkalo',  sc:'fc-c', title:'Penthouse 120m², Split — Meje',   pvt:false,price:'650.000 €', loc:'Split' },
+];
+let fi = 0;
+function startLiveFeed() {
+  setInterval(() => {
+    const feed = document.getElementById('liveFeed');
+    if (!feed || document.getElementById('lp').style.display === 'none') return;
+    const d = feedData[fi++ % feedData.length];
+    const r = document.createElement('div');
+    r.className = 'feed-row f-new';
+    r.style.cssText = 'opacity:0;transform:translateY(-7px);transition:all .33s';
+    r.innerHTML = `<span class="f-src ${d.sc}">${d.src}</span><div><div class="f-title">${d.title} <span class="tag ${d.pvt?'tag-p':'tag-n'}">${d.pvt?'Privatni':'Novo'}</span></div><div class="f-loc">📍 ${d.loc}</div></div><div class="f-price">${d.price}</div><div class="f-time">Upravo</div>`;
+    feed.insertBefore(r, feed.firstChild);
+    requestAnimationFrame(() => { r.style.opacity = '1'; r.style.transform = 'translateY(0)'; });
+    if (feed.children.length > 5) { const last = feed.lastChild; last.style.opacity = '0'; setTimeout(() => last.remove(), 350); }
+    const times = ['Prije 1 min', 'Prije 4 min', 'Prije 9 min', 'Prije 16 min', 'Prije 24 min'];
+    [...feed.querySelectorAll('.f-time')].forEach((t, i) => { if (i > 0) t.textContent = times[i] || 'Prije 30+ min'; });
+  }, 4800);
+}
+
+// ══════════════════════════════════════════
+// SCROLL REVEAL
+// ══════════════════════════════════════════
+function initScrollReveal() {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+  }, { threshold: .08 });
+  document.querySelectorAll('.rv').forEach((el, i) => {
+    el.style.transitionDelay = (i % 3) * .08 + 's';
+    io.observe(el);
+  });
+}
+
+// Auto-refresh oglasa svakih 60 sekundi
+setInterval(() => {
+  if (document.getElementById('dashboard').style.display !== 'none') {
+    loadListings();
+    loadStats();
+  }
+}, 60000);
+</script>
+</body>
+</html>

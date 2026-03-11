@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Pretplata — Pronađi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+<div class="auth-wrap" style="max-width:520px">
+  <a href="index.html" class="logo auth-logo">Pronađi<span>.</span></a>
+  <div class="auth-card">
+    <h2 class="auth-title">Odaberi plan</h2>
+    <p class="auth-sub">Platiš samo za agente koji koriste platformu</p>
+    <div class="form-err" id="formErr" style="display:none"></div>
+    <div style="margin-bottom:24px">
+      <div class="slider-hd"><span class="slider-lbl">Broj agenata</span><span class="slider-val" id="agentCount">1</span></div>
+      <input type="range" min="1" max="20" value="1" id="slider" oninput="calcPrice(this.value)">
+      <div class="disc-badge" id="discBadge">🎉 17% grupni popust aktivan!</div>
+      <div class="price-breakdown" style="margin-top:12px">
+        <div class="prow"><span>Osnovna cijena (1 agent)</span><span>50 €</span></div>
+        <div class="prow" id="discRow" style="display:none"><span>Grupni popust (17%)</span><span id="discVal" style="color:var(--green);font-weight:700">–0 €</span></div>
+        <div class="prow ptotal"><span>Ukupno / mjesečno</span><span id="totalPrice">50 €</span></div>
+      </div>
+    </div>
+    <div class="feat-list" style="margin-bottom:24px">
+      <div class="fl-item">Pristup svim oglasnicima</div>
+      <div class="fl-item">Prepoznavanje privatnih</div>
+      <div class="fl-item">Automatsko praćenje</div>
+      <div class="fl-item">Prilagodljivi filtri</div>
+      <div class="fl-item">Email obavijesti</div>
+      <div class="fl-item">Podrška chat / email</div>
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" id="payBtn" onclick="handleCheckout()">Nastavi na plaćanje →</button>
+    <p style="font-size:12px;color:var(--soft);text-align:center;margin-top:10px">Sigurno plaćanje · Stripe · Otkaži kad god</p>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth();
+let agentCount = 1;
+function calcPrice(v) {
+  agentCount = parseInt(v);
+  document.getElementById('agentCount').textContent = v;
+  const disc = agentCount >= 4 ? 0.17 : 0;
+  const pp = Math.round(50*(1-disc)), tot = agentCount*pp;
+  document.getElementById('totalPrice').textContent = tot.toLocaleString('hr') + ' €';
+  const db=document.getElementById('discBadge'), dr=document.getElementById('discRow');
+  if(disc>0){ db.classList.add('show'); dr.style.display='flex'; document.getElementById('discVal').textContent='–'+Math.round(50*0.17*agentCount)+' €'; }
+  else{ db.classList.remove('show'); dr.style.display='none'; }
+}
+async function handleCheckout() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled=true; btn.textContent='Preusmjeravanje...';
+  try {
+    const data = await api.post('/billing/checkout', { agent_count: agentCount });
+    window.location.href = data.url;
+  } catch(err) {
+    document.getElementById('formErr').textContent=err.message;
+    document.getElementById('formErr').style.display='block';
+    btn.disabled=false; btn.textContent='Nastavi na plaćanje →';
+  }
+}
+</script>
+</body>
+</html>

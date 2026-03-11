@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — Pronađi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Lora:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="sb-ov" id="sbOv" onclick="closeSb()"></div>
+<aside class="dsb" id="dsb">
+  <a href="index.html" class="dsb-logo">Pronađi<span>.</span></a>
+  <nav class="dsb-nav">
+    <div class="dsb-sec">Glavni</div>
+    <a class="ni on" onclick="setView('listings',this)"><span class="ni-ico">🏠</span>Oglasi</a>
+    <a class="ni" onclick="setView('notifications',this)"><span class="ni-ico">🔔</span>Obavijesti</a>
+    <a class="ni" onclick="setView('filters',this)"><span class="ni-ico">🎯</span>Moji filtri</a>
+    <div class="dsb-sec">Analitika</div>
+    <a class="ni" onclick="setView('pricedrops',this)"><span class="ni-ico">📉</span>Sniženja cijena</a>
+    <a class="ni" onclick="setView('stats',this)"><span class="ni-ico">📊</span>Statistike</a>
+    <div class="dsb-sec">Račun</div>
+    <a class="ni" onclick="openBillingPortal()"><span class="ni-ico">💳</span>Pretplata</a>
+    <a class="ni" onclick="handleLogout()"><span class="ni-ico">👋</span>Odjava</a>
+  </nav>
+  <div class="dsb-user">
+    <div class="u-ava" id="userAva">?</div>
+    <div><div class="u-name" id="userName">...</div><div class="u-plan">Pro plan</div></div>
+  </div>
+</aside>
+<main class="dmain">
+  <div class="dtopbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="dsb-tog" id="sbTog" onclick="toggleSb()">☰</button>
+      <div><div class="dtitle" id="pageTitle">Oglasi</div><div class="dsub" id="pageSub">Učitavanje...</div></div>
+    </div>
+    <div class="dtb-r">
+      <button class="btn btn-outline btn-sm" onclick="openFilterModal()">+ Novi filter</button>
+      <button class="btn btn-primary btn-sm" onclick="refreshListings()">↻ Osvježi</button>
+    </div>
+  </div>
+  <div class="dcontent">
+    <div class="stats-row">
+      <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Novi danas</span><span class="sc-ico">🏠</span></div><div class="sc-num" id="statToday">—</div><div class="sc-ch ch-up"></div></div>
+      <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Privatni</span><span class="sc-ico">🎯</span></div><div class="sc-num" id="statPrivate">—</div><div class="sc-ch ch-up"></div></div>
+      <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Sniženja danas</span><span class="sc-ico">📉</span></div><div class="sc-num" id="statDropped">—</div><div class="sc-ch ch-neu"></div></div>
+      <div class="sc-card"><div class="sc-top"><span class="sc-lbl">Oglasnici</span><span class="sc-ico">📡</span></div><div class="sc-num">5</div><div class="sc-ch ch-neu">aktivna</div></div>
+    </div>
+    <div id="view-listings">
+      <div class="d2col">
+        <div class="panel">
+          <div class="phd">
+            <div class="ptitle">Oglasi <div class="live-pill">UŽIVO</div></div>
+            <span style="font-size:11px;color:var(--soft)" id="lastUpdated">Ažurirano: —</span>
+          </div>
+          <div class="dfilters">
+            <button class="df on" onclick="dfOn(this)" data-filter="all">Svi</button>
+            <button class="df" onclick="dfOn(this)" data-filter="private">Privatni</button>
+            <button class="df" onclick="dfOn(this)" data-filter="new">Novi</button>
+            <button class="df" onclick="dfOn(this)" data-filter="dropped">Sniženi</button>
+            <select class="dfs" id="filterCity" onchange="refreshListings()">
+              <option value="">Sve lokacije</option>
+              <option>Zagreb</option><option>Rijeka</option><option>Split</option>
+              <option>Zadar</option><option>Dubrovnik</option><option>Pula</option><option>Osijek</option>
+            </select>
+            <select class="dfs" id="filterType" onchange="refreshListings()">
+              <option value="">Svi tipovi</option>
+              <option value="stan">Stan</option><option value="kuca">Kuća</option>
+              <option value="villa">Villa</option><option value="poslovni">Poslovni</option>
+            </select>
+            <select class="dfs" id="filterSource" onchange="refreshListings()">
+              <option value="">Svi oglasnici</option>
+              <option value="njuskalo">Njuškalo</option><option value="index">Index</option>
+              <option value="plavi">Plavi</option><option value="cackaloo">Čačkalo</option>
+            </select>
+            <div class="df-toggle-wrap">
+              <span class="df-toggle-lbl">Agencije</span>
+              <label class="mini-toggle">
+                <input type="checkbox" id="agencyToggle" onchange="refreshListings()">
+                <div class="mt-track"></div><div class="mt-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div id="dashListings"><div class="loading-row">Učitavanje oglasa...</div></div>
+          <div class="pagination" id="pagination" style="display:none">
+            <button class="btn btn-outline btn-sm" id="prevPage" onclick="changePage(-1)">← Prethodna</button>
+            <span id="pageInfo" style="font-size:13px;color:var(--soft)"></span>
+            <button class="btn btn-outline btn-sm" id="nextPage" onclick="changePage(1)">Sljedeća →</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phd"><div class="ptitle">🔔 Obavijesti</div></div>
+          <div id="notifList"><div class="loading-row">Učitavanje...</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="view-filters" style="display:none">
+      <div class="panel">
+        <div class="phd">
+          <div class="ptitle">🎯 Moji filtri</div>
+          <button class="btn btn-primary btn-sm" onclick="openFilterModal()">+ Novi filter</button>
+        </div>
+        <div id="filtersList" style="padding:16px"><div class="loading-row">Učitavanje filtara...</div></div>
+      </div>
+    </div>
+    <div id="view-pricedrops" style="display:none">
+      <div class="panel">
+        <div class="phd"><div class="ptitle">📉 Sniženja cijene</div></div>
+        <div id="priceDropsList"><div class="loading-row">Učitavanje...</div></div>
+      </div>
+    </div>
+    <div id="view-stats" style="display:none">
+      <div class="panel" style="padding:48px;text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">📊</div>
+        <h3 style="font-family:'Lora',serif;font-weight:600;margin-bottom:8px">Analitika dolazi uskoro</h3>
+        <p style="font-size:14px;color:var(--soft)">Grafovi tržišnih trendova i statistike po regijama u pripremi.</p>
+      </div>
+    </div>
+    <div id="view-notifications" style="display:none">
+      <div class="panel">
+        <div class="phd"><div class="ptitle">🔔 Sve obavijesti</div></div>
+        <div id="allNotifList"><div class="loading-row">Učitavanje...</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+<!-- MODAL -->
+<div class="modal-overlay" id="filterModal" style="display:none" onclick="closeFilterModal()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h3 id="modalTitle">Novi filter</h3><button class="modal-close" onclick="closeFilterModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editFilterId">
+      <div class="form-group"><label class="form-label">Naziv filtera</label><input type="text" class="form-input" id="fName" placeholder="npr. Zagreb stanovi do 200k"></div>
+      <div class="form-group">
+        <label class="form-label">Vrsta nekretnine</label>
+        <div class="chips" id="fTypes">
+          <div class="chip on" data-val="stan" onclick="toggleChip(this)">Stan</div>
+          <div class="chip" data-val="kuca" onclick="toggleChip(this)">Kuća</div>
+          <div class="chip" data-val="villa" onclick="toggleChip(this)">Villa</div>
+          <div class="chip" data-val="poslovni" onclick="toggleChip(this)">Poslovni</div>
+          <div class="chip" data-val="zemljiste" onclick="toggleChip(this)">Zemljište</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Raspon cijene (€)</label>
+        <div class="range-row"><input type="number" class="rinput" id="fPriceMin" placeholder="Min. cijena"><span class="rsep">—</span><input type="number" class="rinput" id="fPriceMax" placeholder="Max. cijena"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kvadratura (m²)</label>
+        <div class="range-row"><input type="number" class="rinput" id="fSizeMin" placeholder="Min. m²"><span class="rsep">—</span><input type="number" class="rinput" id="fSizeMax" placeholder="Max. m²"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Oglasnici</label>
+        <div class="src-list" id="fSources">
+          <div class="srchip on-n" data-val="njuskalo" onclick="toggleSrcChip(this,'on-n')">Njuškalo</div>
+          <div class="srchip on-i" data-val="index" onclick="toggleSrcChip(this,'on-i')">Index</div>
+          <div class="srchip on-p" data-val="plavi" onclick="toggleSrcChip(this,'on-p')">Plavi</div>
+          <div class="srchip on-c" data-val="cackaloo" onclick="toggleSrcChip(this,'on-c')">Čačkalo</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Prikaži agencijske oglase</div><div class="toggle-sub" id="fAgencySub">Isključeno — samo privatni</div></div>
+          <label class="toggle"><input type="checkbox" id="fAgency" onchange="document.getElementById('fAgencySub').textContent=this.checked?'Uključeno':'Isključeno — samo privatni'"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Email obavijesti</div><div class="toggle-sub">Primi email čim se pojavi novi oglas</div></div>
+          <label class="toggle"><input type="checkbox" id="fNotify" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeFilterModal()">Odustani</button>
+      <button class="btn btn-primary" id="saveFilterBtn" onclick="saveFilter()">Spremi filter</button>
+    </div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
