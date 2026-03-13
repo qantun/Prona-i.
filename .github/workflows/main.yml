@@ -23,9 +23,11 @@ jobs:
               page.set_extra_http_headers({
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
               })
-              page.goto('https://www.njuskalo.hr/prodaja-nekretnina?sort=new', wait_until='networkidle', timeout=30000)
+              page.goto('https://www.njuskalo.hr/nekretnine/stanovi?sort=new', wait_until='networkidle', timeout=30000)
+              print("URL:", page.url)
+              print("Title:", page.title())
               html = page.content()
               browser.close()
 
-          print(html[:3000])
+          print(html[:1000])
           EOF
