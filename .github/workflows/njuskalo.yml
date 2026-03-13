@@ -1,35 +1,22 @@
-name: Scrape Njuskalo
-on:
-  schedule:
-    - cron: '0 * * * *'  # svakih sat vremena
-  workflow_dispatch:
-
-jobs:
-  scrape:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Scrape Njuskalo i pošalji na API
+- name: Debug HTML struktura
         run: |
           curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
           "https://www.njuskalo.hr/prodaja-nekretnina?sort=new" -o /tmp/njuskalo.html
           
-          # Izvuci oglase - title, cijena, lokacija, URL
           python3 << 'EOF'
-          import re, json, urllib.request
-
           with open('/tmp/njuskalo.html', 'r', errors='ignore') as f:
               html = f.read()
-
-          # Pronadi sve oglase
-          listings = []
-          pattern = r'href="(https://www\.njuskalo\.hr/oglas/[^"]+)"[^>]*>.*?<h3[^>]*>([^<]+)</h3>.*?(\d[\d.,]+)\s*€'
-          for m in re.finditer(pattern, html, re.DOTALL):
-              listings.append({
-                  'url': m.group(1),
-                  'title': m.group(2).strip(),
-                  'price': m.group(3).replace('.','').replace(',','.')
-              })
-
-          print(f"Pronađeno: {len(listings)} oglasa")
-          print(json.dumps(listings[:3], ensure_ascii=False, indent=2))
+          
+          # Pronadi sve linkove koji izgledaju kao oglasi
+          import re
+          links = re.findall(r'href="(/oglas/[^"]+)"', html)
+          print("Oglas linkovi:", links[:10])
+          
+          # Pronadi h3 tagove
+          h3s = re.findall(r'<h3[^>]*>([^<]+)</h3>', html)
+          print("H3 tagovi:", h3s[:10])
+          
+          # Pronadi cijene
+          prices = re.findall(r'(\d[\d.]+)\s*€', html)
+          print("Cijene:", prices[:10])
           EOF
