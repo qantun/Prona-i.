@@ -16,7 +16,6 @@ jobs:
         run: |
           python3 << 'EOF'
           from playwright.sync_api import sync_playwright
-          import re
 
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True)
@@ -28,14 +27,5 @@ jobs:
               html = page.content()
               browser.close()
 
-          print(f"HTML size: {len(html)}")
-          
-          links = re.findall(r'href="(/oglas/[^"]+)"', html)
-          print("Oglas linkovi:", links[:5])
-          
-          h3s = re.findall(r'<h3[^>]*>([^<]+)</h3>', html)
-          print("H3 tagovi:", h3s[:5])
-          
-          prices = re.findall(r'(\d[\d.]+)\s*€', html)
-          print("Cijene:", prices[:5])
+          print(html[:3000])
           EOF
