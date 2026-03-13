@@ -1,5 +1,7 @@
 name: Scrape Njuskalo
 "on":
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -16,7 +18,10 @@ jobs:
         run: |
           python3 << 'EOF'
           from playwright.sync_api import sync_playwright
-          import re
+          import re, json, urllib.request, urllib.parse
+
+          API_URL = "https://xn--pronai-f3a.eu/api/listings/import"
+          API_SECRET = "pronadji_scraper_secret_2026"
 
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True)
@@ -25,14 +30,45 @@ jobs:
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
               })
               page.goto('https://www.njuskalo.hr/nekretnine', wait_until='networkidle', timeout=30000)
-              print("Title:", page.title())
-              print("URL:", page.url)
               html = page.content()
               browser.close()
 
-          print(f"HTML size: {len(html)}")
-          links = re.findall(r'href="([^"]*oglas[^"]*)"', html)
-          print("Oglas linkovi:", links[:5])
-          print("\nHTML snippet:")
-          print(html[2000:4000])
+          # Izvuci oglase
+          listings = []
+          links = list(set(re.findall(r'href="(/nekretnine/[^"]*oglas-\d+)"', html)))
+          
+          for link in links[:20]:
+              url = f"https://www.njuskalo.hr{link}"
+              # Izvuci ID iz URL-a
+              oglas_id = re.search(r'oglas-(\d+)', link)
+              if not oglas_id:
+                  continue
+              
+              # Izvuci naziv iz URL-a
+              title = link.split('/')[-1].rsplit('-oglas-', 1)[0].replace('-', ' ').title()
+              
+              listings.append({
+                  'external_id': f"njuskalo_{oglas_id.group(1)}",
+                  'source': 'njuskalo',
+                  'title': title,
+                  'url': url,
+                  'price': None,
+                  'location': None,
+                  'area_m2': None,
+                  'property_type': 'stan',
+                  'is_private': True
+              })
+
+          print(f"Pronađeno {len(listings)} oglasa")
+          print(json.dumps(listings[:3], ensure_ascii=False, indent=2))
+
+          # Pošalji na API
+          if listings:
+              data = json.dumps({'listings': listings, 'secret': API_SECRET}).encode('utf-8')
+              req = urllib.request.Request(API_URL, data=data, headers={'Content-Type': 'application/json'})
+              try:
+                  resp = urllib.request.urlopen(req, timeout=10)
+                  print("API odgovor:", resp.read().decode())
+              except Exception as e:
+                  print("API greška:", e)
           EOF
