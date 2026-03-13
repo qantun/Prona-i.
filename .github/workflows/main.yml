@@ -16,6 +16,7 @@ jobs:
         run: |
           python3 << 'EOF'
           from playwright.sync_api import sync_playwright
+          import re
 
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True)
@@ -23,11 +24,15 @@ jobs:
               page.set_extra_http_headers({
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
               })
-              page.goto('https://www.njuskalo.hr/nekretnine/stanovi?sort=new', wait_until='networkidle', timeout=30000)
-              print("URL:", page.url)
+              page.goto('https://www.njuskalo.hr/nekretnine', wait_until='networkidle', timeout=30000)
               print("Title:", page.title())
+              print("URL:", page.url)
               html = page.content()
               browser.close()
 
-          print(html[:1000])
+          print(f"HTML size: {len(html)}")
+          links = re.findall(r'href="([^"]*oglas[^"]*)"', html)
+          print("Oglas linkovi:", links[:5])
+          print("\nHTML snippet:")
+          print(html[2000:4000])
           EOF
