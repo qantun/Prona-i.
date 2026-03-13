@@ -1,4 +1,12 @@
-- name: Debug HTML struktura
+name: Scrape Njuskalo
+"on":
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug HTML struktura
         run: |
           curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
           "https://www.njuskalo.hr/prodaja-nekretnina?sort=new" -o /tmp/njuskalo.html
@@ -7,16 +15,13 @@
           with open('/tmp/njuskalo.html', 'r', errors='ignore') as f:
               html = f.read()
           
-          # Pronadi sve linkove koji izgledaju kao oglasi
           import re
           links = re.findall(r'href="(/oglas/[^"]+)"', html)
           print("Oglas linkovi:", links[:10])
           
-          # Pronadi h3 tagove
           h3s = re.findall(r'<h3[^>]*>([^<]+)</h3>', html)
           print("H3 tagovi:", h3s[:10])
           
-          # Pronadi cijene
           prices = re.findall(r'(\d[\d.]+)\s*€', html)
           print("Cijene:", prices[:10])
           EOF
