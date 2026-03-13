@@ -1,0 +1,14 @@
+name: Test Njuskalo
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Njuskalo access
+        run: |
+          curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+          "https://www.njuskalo.hr/prodaja-nekretnina" -o /tmp/test.html
+          wc -c /tmp/test.html
+          head -c 300 /tmp/test.html
