@@ -6,22 +6,36 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug HTML struktura
+      - name: Install Playwright
         run: |
-          curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-          "https://www.njuskalo.hr/prodaja-nekretnina?sort=new" -o /tmp/njuskalo.html
-          
+          pip install playwright
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Scrape Njuskalo
+        run: |
           python3 << 'EOF'
-          with open('/tmp/njuskalo.html', 'r', errors='ignore') as f:
-              html = f.read()
-          
+          from playwright.sync_api import sync_playwright
           import re
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              page.set_extra_http_headers({
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              })
+              page.goto('https://www.njuskalo.hr/prodaja-nekretnina?sort=new', wait_until='networkidle', timeout=30000)
+              html = page.content()
+              browser.close()
+
+          print(f"HTML size: {len(html)}")
+          
           links = re.findall(r'href="(/oglas/[^"]+)"', html)
-          print("Oglas linkovi:", links[:10])
+          print("Oglas linkovi:", links[:5])
           
           h3s = re.findall(r'<h3[^>]*>([^<]+)</h3>', html)
-          print("H3 tagovi:", h3s[:10])
+          print("H3 tagovi:", h3s[:5])
           
           prices = re.findall(r'(\d[\d.]+)\s*€', html)
-          print("Cijene:", prices[:10])
+          print("Cijene:", prices[:5])
           EOF
