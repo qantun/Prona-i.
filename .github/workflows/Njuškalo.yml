@@ -1,4 +1,4 @@
-name: Debug oglas privatni
+name: Debug lista
 "on":
   workflow_dispatch:
 
@@ -23,20 +23,12 @@ jobs:
             page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             page.goto('https://www.njuskalo.hr/nekretnine', wait_until='networkidle', timeout=30000)
             html = page.content()
-            links = re.findall(r'href="(/nekretnine/[^"]*oglas-\d+)"', html)
-            
-            for link in links[:3]:
-              url = 'https://www.njuskalo.hr' + link
-              print("\n=== Oglas:", url)
-              page2 = browser.new_page()
-              page2.goto(url, wait_until='networkidle', timeout=30000)
-              html2 = page2.content()
-              page2.close()
-              
-              for kw in ['privat', 'agenc', 'oglasiva', 'advertiser', 'seller-type', 'user-type']:
-                idx = html2.lower().find(kw)
-                if idx > 0:
-                  print(f"[{kw}]:", html2[idx-100:idx+200])
-          
-          browser.close()
+            browser.close()
+
+          idx = html.lower().find('oglas-47113454')
+          if idx > 0:
+            print(html[idx-500:idx+1000])
+          else:
+            idx2 = html.lower().find('/nekretnine/')
+            print(html[idx2-200:idx2+1500])
           EOF
