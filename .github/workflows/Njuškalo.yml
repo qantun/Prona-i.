@@ -1,11 +1,9 @@
-name: Scrape Njuskalo
+name: Debug oglas privatni
 "on":
-  schedule:
-    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
-  scrape:
+  debug:
     runs-on: ubuntu-latest
     steps:
       - name: Install Playwright
@@ -13,96 +11,32 @@ jobs:
           pip install playwright
           playwright install chromium
           playwright install-deps chromium
-
-      - name: Scrape Njuskalo
+      - name: Debug
         run: |
           python3 << 'EOF'
           from playwright.sync_api import sync_playwright
-          import re, json, urllib.request
-
-          API_URL = "https://xn--pronai-f3a.eu/api/listings/import"
-          API_SECRET = "pronadji_scraper_secret_2026"
-
-          URLS = [
-            ("https://www.njuskalo.hr/prodaja-stanova", "stan"),
-            ("https://www.njuskalo.hr/prodaja-kuca", "kuca"),
-            ("https://www.njuskalo.hr/prodaja-zemljista", "zemljiste"),
-            ("https://www.njuskalo.hr/najam-stanova", "stan"),
-            ("https://www.njuskalo.hr/najam-kuca", "kuca"),
-            ("https://www.njuskalo.hr/poslovni-prostor", "poslovni"),
-            ("https://www.njuskalo.hr/nekretnine", "stan"),
-          ]
-
-          all_listings = []
+          import re
 
           with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.set_extra_http_headers({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            page.goto('https://www.njuskalo.hr/nekretnine', wait_until='networkidle', timeout=30000)
+            html = page.content()
+            links = re.findall(r'href="(/nekretnine/[^"]*oglas-\d+)"', html)
             
-            for url, prop_type in URLS:
-              for page_num in range(1, 4):  # 3 stranice po kategoriji
-                page_url = f"{url}?page={page_num}"
-                print(f"Scraping: {page_url}")
-                try:
-                  page = browser.new_page()
-                  page.set_extra_http_headers({
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                  })
-                  page.goto(page_url, wait_until='networkidle', timeout=30000)
-                  html = page.content()
-                  page.close()
-
-                  links = list(set(re.findall(r'href="(/nekretnine/[^"]*oglas-\d+)"', html)))
-                  print(f"  Pronađeno {len(links)} oglasa")
-
-                  for link in links:
-                    oglas_id = re.search(r'oglas-(\d+)', link)
-                    if not oglas_id:
-                      continue
-                    title = link.split('/')[-1].rsplit('-oglas-', 1)[0].replace('-', ' ').title()
-                    
-                    # Izvuci m2 iz naslova
-                    m2 = re.search(r'(\d+)[- ][Mm]2', title)
-                    area = float(m2.group(1)) if m2 else None
-                    
-                    # Izvuci grad iz naslova
-                    cities = ['Zagreb', 'Split', 'Rijeka', 'Zadar', 'Osijek', 'Dubrovnik', 'Pula', 'Varazdin', 'Sisak']
-                    city = next((c for c in cities if c.lower() in title.lower()), None)
-
-                    all_listings.append({
-                      'external_id': f"njuskalo_{oglas_id.group(1)}",
-                      'source': 'njuskalo',
-                      'title': title,
-                      'url': f"https://www.njuskalo.hr{link}",
-                      'price': None,
-                      'location': city,
-                      'area_m2': area,
-                      'property_type': prop_type,
-                      'is_private': True
-                    })
-                except Exception as e:
-                  print(f"  Greška: {e}")
-                  continue
-
-            browser.close()
-
-          # Deduplikacija
-          seen = set()
-          unique = []
-          for l in all_listings:
-            if l['external_id'] not in seen:
-              seen.add(l['external_id'])
-              unique.append(l)
-
-          print(f"\nUkupno jedinstvenih oglasa: {len(unique)}")
-
-          # Šalji na API u grupama od 50
-          for i in range(0, len(unique), 50):
-            batch = unique[i:i+50]
-            data = json.dumps({'listings': batch, 'secret': API_SECRET}).encode('utf-8')
-            req = urllib.request.Request(API_URL, data=data, headers={'Content-Type': 'application/json'})
-            try:
-              resp = urllib.request.urlopen(req, timeout=15)
-              print(f"Batch {i//50+1}: {resp.read().decode()}")
-            except Exception as e:
-              print(f"API greška batch {i//50+1}: {e}")
+            for link in links[:3]:
+              url = 'https://www.njuskalo.hr' + link
+              print("\n=== Oglas:", url)
+              page2 = browser.new_page()
+              page2.goto(url, wait_until='networkidle', timeout=30000)
+              html2 = page2.content()
+              page2.close()
+              
+              for kw in ['privat', 'agenc', 'oglasiva', 'advertiser', 'seller-type', 'user-type']:
+                idx = html2.lower().find(kw)
+                if idx > 0:
+                  print(f"[{kw}]:", html2[idx-100:idx+200])
+          
+          browser.close()
           EOF
